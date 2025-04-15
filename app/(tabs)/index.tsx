@@ -1,18 +1,53 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, Alert, Text, View, Platform } from 'react-native';
+import { StyleSheet, Alert, Text, View, Platform, Modal, TouchableOpacity, Dimensions } from 'react-native';
+import { WebView } from 'react-native-webview';
 import io from 'socket.io-client';
 
-// Thay đổi IP này thành IP của máy chủ của bạn
-const SOCKET_URL = 'http://localhost:3000'; // Địa chỉ máy chủ Socket.IO
+const SOCKET_URL = "http://localhost:3000"; // Địa chỉ WebSocket server
+
+// HTML template cho OpenStreetMap với Leaflet
+const getMapHTML = (latitude: number, longitude: number) => `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fall Location</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body { margin: 0; }
+        #map { height: 100vh; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script>
+        const map = L.map('map').setView([${latitude}, ${longitude}], 16);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+        L.marker([${latitude}, ${longitude}])
+            .addTo(map)
+            .bindPopup('Vị trí té ngã')
+            .openPopup();
+    </script>
+</body>
+</html>
+`;
 
 export default function TabOneScreen() {
   const [connectionStatus, setConnectionStatus] = useState('Đang kết nối...');
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
+  const [showMap, setShowMap] = useState(false);
+  const [fallLocation, setFallLocation] = useState<{
+    latitude: number;
+    longitude: number;
+    timestamp: string;
+  } | null>(null);
 
   useEffect(() => {
     console.log('Connecting to:', SOCKET_URL);
     
-    // Khởi tạo Socket.IO với cấu hình
     const socket = io(SOCKET_URL, {
       transports: ['websocket', 'polling'],
       reconnection: true,
@@ -21,7 +56,6 @@ export default function TabOneScreen() {
       timeout: 20000
     });
 
-    // Xử lý các sự kiện Socket.IO
     socket.on('connect', () => {
       setConnectionStatus('Đã kết nối');
       console.log('✅ Socket.IO connected');
@@ -36,14 +70,26 @@ export default function TabOneScreen() {
       console.log('Fall detected:', data);
       setLastUpdate('Phát hiện té ngã lúc: ' + new Date().toLocaleTimeString());
       
+      if (data.location?.latitude && data.location?.longitude) {
+        setFallLocation({
+          latitude: data.location.latitude,
+          longitude: data.location.longitude,
+          timestamp: data.timestamp
+        });
+      }
+
       Alert.alert(
         '🚨 Phát hiện té ngã!',
         `${data.message}\n\nVị trí: ${data.location?.latitude}, ${data.location?.longitude}\nThời gian: ${data.timestamp}`,
         [
           {
-            text: 'Đã hiểu',
-            onPress: () => console.log('Alert closed'),
+            text: 'Xem vị trí',
+            onPress: () => setShowMap(true),
             style: 'default',
+          },
+          {
+            text: 'Đóng',
+            style: 'cancel',
           },
         ],
         { cancelable: false }
@@ -61,7 +107,6 @@ export default function TabOneScreen() {
       setLastUpdate('Lỗi kết nối lúc: ' + new Date().toLocaleTimeString());
     });
 
-    // Cleanup khi component unmount
     return () => {
       socket.disconnect();
     };
@@ -84,12 +129,45 @@ export default function TabOneScreen() {
           </Text>
         )}
       </View>
+
       <View style={styles.infoContainer}>
         <Text style={styles.description}>
           Ứng dụng đang theo dõi tín hiệu từ thiết bị IoT.
           {'\n'}Bạn sẽ nhận được thông báo khi phát hiện té ngã.
         </Text>
+        {fallLocation && (
+          <TouchableOpacity 
+            style={styles.mapButton}
+            onPress={() => setShowMap(true)}
+          >
+            <Text style={styles.mapButtonText}>Xem vị trí té ngã</Text>
+          </TouchableOpacity>
+        )}
       </View>
+
+      <Modal
+        visible={showMap}
+        animationType="slide"
+        onRequestClose={() => setShowMap(false)}
+      >
+        <View style={styles.modalContainer}>
+          <TouchableOpacity 
+            style={styles.closeButton}
+            onPress={() => setShowMap(false)}
+          >
+            <Text style={styles.closeButtonText}>Đóng</Text>
+          </TouchableOpacity>
+          
+          {fallLocation && (
+            <WebView
+              source={{ 
+                html: getMapHTML(fallLocation.latitude, fallLocation.longitude)
+              }}
+              style={styles.map}
+            />
+          )}
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -148,4 +226,45 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     color: '#000'
   },
+  mapButton: {
+    backgroundColor: '#2196F3',
+    padding: 10,
+    borderRadius: 5,
+    marginTop: 15,
+    alignItems: 'center'
+  },
+  mapButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500'
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#fff'
+  },
+  map: {
+    flex: 1
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    zIndex: 1,
+    backgroundColor: '#fff',
+    padding: 10,
+    borderRadius: 5,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  closeButtonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: '500'
+  }
 });
