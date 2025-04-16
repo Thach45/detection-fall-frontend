@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   StyleSheet,
   View,
@@ -10,9 +10,10 @@ import {
   Image,
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
+import { AuthContext } from '../_layout';
 
 type IconName = 'user' | 'calendar' | 'venus-mars' | 'phone' | 'map-marker' | 
-                'heartbeat' | 'user-circle' | 'users' | 'edit' | 'check';
+                'heartbeat' | 'user-circle' | 'users' | 'edit' | 'check' | 'sign-out';
 
 interface UserProfile {
   avatar: string;
@@ -30,6 +31,7 @@ interface UserProfile {
 }
 
 export default function ProfileScreen() {
+  const { logout } = useContext(AuthContext);
   const [isEditing, setIsEditing] = useState(false);
   const [profile, setProfile] = useState<UserProfile>({
     avatar: 'https://ui-avatars.com/api/?name=Nguyen+Van+A&background=2196F3&color=fff',
@@ -56,6 +58,24 @@ export default function ProfileScreen() {
     setProfile(editedProfile);
     setIsEditing(false);
     Alert.alert('Thành công', 'Đã cập nhật thông tin');
+  };
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Xác nhận',
+      'Bạn có chắc muốn đăng xuất?',
+      [
+        {
+          text: 'Hủy',
+          style: 'cancel',
+        },
+        {
+          text: 'Đăng xuất',
+          onPress: logout,
+          style: 'destructive',
+        },
+      ]
+    );
   };
 
   const renderInfoCard = (icon: IconName, label: string, value: string) => (
@@ -101,25 +121,35 @@ export default function ProfileScreen() {
             style={styles.avatar}
           />
           <Text style={styles.name}>{profile.fullName}</Text>
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={() => {
-              if (isEditing) {
-                handleSave();
-              } else {
-                setIsEditing(true);
-              }
-            }}
-          >
-            <FontAwesome 
-              name={isEditing ? "check" : "edit"} 
-              size={20} 
-              color="#fff" 
-            />
-            <Text style={styles.editButtonText}>
-              {isEditing ? ' Lưu' : ' Chỉnh sửa'}
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={() => {
+                if (isEditing) {
+                  handleSave();
+                } else {
+                  setIsEditing(true);
+                }
+              }}
+            >
+              <FontAwesome 
+                name={isEditing ? "check" : "edit"} 
+                size={20} 
+                color="#fff" 
+              />
+              <Text style={styles.editButtonText}>
+                {isEditing ? ' Lưu' : ' Chỉnh sửa'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={handleLogout}
+            >
+              <FontAwesome name="sign-out" size={20} color="#fff" />
+              <Text style={styles.logoutButtonText}> Đăng xuất</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -175,6 +205,11 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginBottom: 15,
   },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 10,
+  },
   editButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -184,6 +219,19 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   editButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    marginLeft: 5,
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 59, 48, 0.8)',
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  logoutButtonText: {
     color: '#fff',
     fontSize: 16,
     marginLeft: 5,

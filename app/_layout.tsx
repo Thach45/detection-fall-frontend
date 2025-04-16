@@ -1,39 +1,74 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
+import { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import 'react-native-reanimated';
+import { useRouter, useSegments } from 'expo-router';
+import React from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { useColorScheme } from '@/hooks/useColorScheme';
+export const AuthContext = React.createContext<{
+  login: () => void;
+  logout: () => void;
+  isLoggedIn: boolean;
+}>({
+  login: () => {},
+  logout: () => {},
+  isLoggedIn: false,
+});
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
-
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
+function useProtectedRoute(isLoggedIn: boolean) {
+  const segments = useSegments();
+  const router = useRouter();
 
   useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
+    const inAuthGroup = segments[0] === '(tabs)';
 
-  if (!loaded) {
-    return null;
-  }
+    if (!isLoggedIn && inAuthGroup) {
+      router.replace('/login');
+    } else if (isLoggedIn && !inAuthGroup) {
+      router.replace('/(tabs)');
+    }
+  }, [isLoggedIn, segments]);
+}
+
+export default function RootLayout() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useProtectedRoute(isLoggedIn);
+
+  useEffect(() => {
+    // Kiểm tra trạng thái đăng nhập khi khởi động app
+    AsyncStorage.getItem('isLoggedIn').then(value => {
+      setIsLoggedIn(value === 'true');
+    });
+  }, []);
+
+  const authContext = {
+    login: async () => {
+      await AsyncStorage.setItem('isLoggedIn', 'true');
+      setIsLoggedIn(true);
+    },
+    logout: async () => {
+      await AsyncStorage.removeItem('isLoggedIn');
+      setIsLoggedIn(false);
+    },
+    isLoggedIn,
+  };
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <AuthContext.Provider value={authContext}>
       <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
+        <Stack.Screen
+          name="login"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="(tabs)"
+          options={{
+            headerShown: false,
+          }}
+        />
       </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    </AuthContext.Provider>
   );
 }
