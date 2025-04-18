@@ -7,7 +7,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 interface User {
   phoneEmergency: string;
   deviceId: string;
-  fullName: string;
+  fullName?: string;
+
   // Add other user fields as needed
 }
 

@@ -27,7 +27,7 @@ interface UserProfile {
   fullName: string;
   age: number | null;
   sex: string;
-  phone: string;
+ 
   address: string;
   hidden_disease: string;
   fullNameEmergency: string;
@@ -46,7 +46,7 @@ export default function ProfileScreen() {
     fullName: user?.fullName || '',
     age: null,
     sex: '',
-    phone: user?.phoneEmergency || '',
+
     address: '',
     hidden_disease: '',
     phoneEmergency: user?.phoneEmergency || '',
@@ -155,7 +155,7 @@ export default function ProfileScreen() {
                 'họvàtên': 'fullName',
                 'tuổi': 'age',
                 'giớitính': 'sex',
-                'sốđiệnthoại': 'phone',
+               
                 'địachỉ': 'address',
                 'bệnhnền': 'hidden_disease',
                 'họtên': 'fullNameEmergency',
@@ -228,7 +228,7 @@ export default function ProfileScreen() {
         {renderInfoCard('user', 'Họ và tên', editedProfile.fullName)}
         {renderInfoCard('calendar', 'Tuổi', editedProfile.age?.toString() || '')}
         {renderInfoCard('venus-mars', 'Giới tính', editedProfile.sex)}
-        {renderInfoCard('phone', 'Số điện thoại', editedProfile.phone)}
+     
         {renderInfoCard('map-marker', 'Địa chỉ', editedProfile.address)}
         {renderInfoCard('heartbeat', 'Bệnh nền', editedProfile.hidden_disease)}
         {renderInfoCard('mobile-phone', 'Máy đo', editedProfile.deviceId)}

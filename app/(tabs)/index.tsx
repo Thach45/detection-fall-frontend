@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { StyleSheet, Alert, Text, View, Platform, Modal, TouchableOpacity, Dimensions } from 'react-native';
 import { WebView } from 'react-native-webview';
+import { AuthContext } from '../_layout';
 import io from 'socket.io-client';
 
 const SOCKET_URL = "http://localhost:3000"; // Địa chỉ WebSocket server
@@ -39,6 +40,7 @@ export default function TabOneScreen() {
   const [connectionStatus, setConnectionStatus] = useState('Đang kết nối...');
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
   const [showMap, setShowMap] = useState(false);
+  const { user } = useContext(AuthContext);
   const [fallLocation, setFallLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -59,6 +61,16 @@ export default function TabOneScreen() {
     socket.on('connect', () => {
       setConnectionStatus('Đã kết nối');
       console.log('✅ Socket.IO connected');
+      
+      // Đăng ký deviceId với server khi kết nối thành công
+      if (user?.deviceId) {
+        socket.emit('register_device', user.deviceId);
+        console.log('📱 Registering device:', user.deviceId);
+      }
+    });
+
+    socket.on('registered', (response) => {
+      console.log('📱 Device registration response:', response);
     });
 
     socket.on('connection_confirmed', (data) => {
@@ -68,6 +80,11 @@ export default function TabOneScreen() {
 
     socket.on('fall_detected', (data) => {
       console.log('Fall detected:', data);
+      // Chỉ xử lý nếu deviceId trùng khớp
+      if (data.deviceId !== user?.deviceId) {
+        console.log('Ignoring fall detection for different device');
+        return;
+      }
       setLastUpdate('Phát hiện té ngã lúc: ' + new Date().toLocaleTimeString());
       
       if (data.location?.latitude && data.location?.longitude) {
@@ -110,7 +127,7 @@ export default function TabOneScreen() {
     return () => {
       socket.disconnect();
     };
-  }, []);
+  }, [user?.deviceId]); // Thêm user.deviceId vào dependencies
 
   return (
     <View style={styles.container}>

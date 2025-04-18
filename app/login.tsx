@@ -34,13 +34,13 @@ interface ApiError {
 export default function LoginScreen() {
   const { login } = useContext(AuthContext);
   const router = useRouter();
-  const [phone, setPhone] = useState('');
+  const [phoneEmergency, setPhoneEmergency] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!phone.trim() || !password.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ thông tin');
+    if (!phoneEmergency.trim() || !password.trim()) {
+      Alert.alert('Lỗi', 'Vui lòng nhập số điện thoại khẩn cấp và mật khẩu');
       return;
     }
 
@@ -53,7 +53,7 @@ export default function LoginScreen() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          phoneEmergency: phone.trim(),
+          phoneEmergency: phoneEmergency.trim(),
           password: password.trim(),
         }),
       });
@@ -63,14 +63,14 @@ export default function LoginScreen() {
       if (!response.ok) {
         throw new Error('message' in data ? data.message : 'Đăng nhập thất bại');
       }
-      await AsyncStorage.setItem('phoneEmergency', phone.trim());
+      await AsyncStorage.setItem('phoneEmergency', phoneEmergency.trim());
       // Type guard to ensure we have a LoginResponse
       if ('user' in data) {
         // Save user data and token if needed
         await login(data.user);
         
         // Reset form
-        setPhone('');
+        setPhoneEmergency('');
         setPassword('');
       }
       
@@ -107,9 +107,9 @@ export default function LoginScreen() {
             <FontAwesome name="phone" size={20} color="#666" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Số điện thoại"
-              value={phone}
-              onChangeText={setPhone}
+              placeholder="Số điện thoại khẩn cấp"
+              value={phoneEmergency}
+              onChangeText={setPhoneEmergency}
               keyboardType="phone-pad"
               autoCapitalize="none"
               placeholderTextColor="#999"

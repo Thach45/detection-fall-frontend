@@ -20,7 +20,7 @@ const API_URL = 'http://localhost:3000/api';
 interface RegisterResponse {
   message: string;
   user: {
-    phone: string;
+    phoneEmergency: string;
     deviceId: string;
   };
 }
