@@ -13,18 +13,33 @@ import {
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { AuthContext } from './_layout';
+import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const DEMO_USERNAME = 'admin';
-const DEMO_PASSWORD = 'admin';
+const API_URL = 'http://localhost:3000/api';
+
+interface LoginResponse {
+  message: string;
+  user: {
+    phoneEmergency: string;
+    deviceId: string;
+    fullName: string;
+  };
+}
+
+interface ApiError {
+  message: string;
+}
 
 export default function LoginScreen() {
   const { login } = useContext(AuthContext);
-  const [username, setUsername] = useState('');
+  const router = useRouter();
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!username.trim() || !password.trim()) {
+    if (!phone.trim() || !password.trim()) {
       Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ thông tin');
       return;
     }
@@ -32,23 +47,47 @@ export default function LoginScreen() {
     setIsLoading(true);
 
     try {
-      // Giả lập delay đăng nhập
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      if (username === DEMO_USERNAME && password === DEMO_PASSWORD) {
-        await login();
-      } else {
-        Alert.alert('Lỗi', 'Tên đăng nhập hoặc mật khẩu không đúng');
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          phoneEmergency: phone.trim(),
+          password: password.trim(),
+        }),
+      });
+
+      const data = await response.json() as LoginResponse | ApiError;
+
+      if (!response.ok) {
+        throw new Error('message' in data ? data.message : 'Đăng nhập thất bại');
       }
+      await AsyncStorage.setItem('phoneEmergency', phone.trim());
+      // Type guard to ensure we have a LoginResponse
+      if ('user' in data) {
+        // Save user data and token if needed
+        await login(data.user);
+        
+        // Reset form
+        setPhone('');
+        setPassword('');
+      }
+      
     } catch (error) {
-      Alert.alert('Lỗi', 'Có lỗi xảy ra, vui lòng thử lại');
+      console.error('Login error:', error);
+      Alert.alert('Lỗi', error instanceof Error ? error.message : 'Có lỗi xảy ra, vui lòng thử lại');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleRegister = () => {
+    router.push('/logup');
+  };
+
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
@@ -65,12 +104,13 @@ export default function LoginScreen() {
 
         <View style={styles.formContainer}>
           <View style={styles.inputContainer}>
-            <FontAwesome name="user" size={20} color="#666" style={styles.inputIcon} />
+            <FontAwesome name="phone" size={20} color="#666" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Tên đăng nhập"
-              value={username}
-              onChangeText={setUsername}
+              placeholder="Số điện thoại"
+              value={phone}
+              onChangeText={setPhone}
+              keyboardType="phone-pad"
               autoCapitalize="none"
               placeholderTextColor="#999"
               editable={!isLoading}
@@ -105,11 +145,15 @@ export default function LoginScreen() {
             )}
           </TouchableOpacity>
 
-          <View style={styles.noteContainer}>
-            <Text style={styles.noteText}>
-              Tài khoản demo: {DEMO_USERNAME} / {DEMO_PASSWORD}
+          <TouchableOpacity
+            style={styles.registerButton}
+            onPress={handleRegister}
+            disabled={isLoading}
+          >
+            <Text style={styles.registerText}>
+              Chưa có tài khoản? Đăng ký ngay
             </Text>
-          </View>
+          </TouchableOpacity>
         </View>
       </View>
     </KeyboardAvoidingView>
@@ -194,9 +238,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#eee',
   },
-  noteText: {
-    color: '#666',
+  registerButton: {
+    marginTop: 15,
+    padding: 10,
+  },
+  registerText: {
+    color: '#2196F3',
     textAlign: 'center',
     fontSize: 14,
+    textDecorationLine: 'underline',
   },
 });

@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -12,52 +12,110 @@ import {
 import { FontAwesome } from '@expo/vector-icons';
 import { AuthContext } from '../_layout';
 
-type IconName = 'user' | 'calendar' | 'venus-mars' | 'phone' | 'map-marker' | 
-                'heartbeat' | 'user-circle' | 'users' | 'edit' | 'check' | 'sign-out';
+type IconName = 'user' | 'calendar' | 'venus-mars' | 'phone' | 'map-marker' |
+                'heartbeat' | 'user-circle' | 'users' | 'edit' | 'check' | 'sign-out' |
+                'tablet' | 'mobile-phone';
+
+const API_URL = 'http://localhost:3000/api';
+
+interface ApiError {
+  message: string;
+}
 
 interface UserProfile {
-  avatar: string;
+  avatar?: string;
   fullName: string;
-  age: string;
-  gender: string;
+  age: number | null;
+  sex: string;
   phone: string;
   address: string;
-  medicalConditions: string;
-  emergencyContact: {
-    name: string;
-    phone: string;
-    relationship: string;
-  };
+  hidden_disease: string;
+  fullNameEmergency: string;
+  phoneEmergency: string;
+  emailEmergency: string;
+  deviceId: string;
 }
 
 export default function ProfileScreen() {
-  const { logout } = useContext(AuthContext);
+  const { logout, user } = useContext(AuthContext);
   const [isEditing, setIsEditing] = useState(false);
+  const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.fullName || 'User')}&background=2196F3&color=fff`;
+  
   const [profile, setProfile] = useState<UserProfile>({
-    avatar: 'https://ui-avatars.com/api/?name=Nguyen+Van+A&background=2196F3&color=fff',
-    fullName: 'Nguyễn Văn A',
-    age: '65',
-    gender: 'Nam',
-    phone: '0123456789',
-    address: '123 Đường ABC, Quận 1, TP.HCM',
-    medicalConditions: 'Huyết áp cao, tiểu đường',
-    emergencyContact: {
-      name: 'Nguyễn Văn B',
-      phone: '0987654321',
-      relationship: 'Con trai',
-    },
+    avatar: defaultAvatar,
+    fullName: user?.fullName || '',
+    age: null,
+    sex: '',
+    phone: user?.phoneEmergency || '',
+    address: '',
+    hidden_disease: '',
+    phoneEmergency: user?.phoneEmergency || '',
+    deviceId: user?.deviceId || '',
+    fullNameEmergency: '',
+    emailEmergency: '',
   });
 
   const [editedProfile, setEditedProfile] = useState<UserProfile>(profile);
 
-  const handleSave = () => {
-    if (!editedProfile.fullName.trim() || !editedProfile.phone.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng điền đầy đủ họ tên và số điện thoại');
+  useEffect(() => {
+    if (user?.phoneEmergency) { 
+      
+      fetchUserProfile();
+    }
+  }, [user]);
+
+  const fetchUserProfile = async () => {
+    try {
+      const response = await fetch(`${API_URL}/users/${user?.phoneEmergency}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error('message' in data ? data.message : 'Lỗi tải thông tin');
+      }
+    
+      setProfile(data.user);
+      setEditedProfile(data.user);
+    } catch (error) {
+      console.error('Fetch profile error:', error);
+      Alert.alert('Lỗi', 'Không thể tải thông tin người dùng');
+    }
+  };
+
+  const handleSave = async () => {
+    if (!editedProfile.fullName.trim()) {
+      Alert.alert('Lỗi', 'Vui lòng điền đầy đủ họ tên');
       return;
     }
-    setProfile(editedProfile);
-    setIsEditing(false);
-    Alert.alert('Thành công', 'Đã cập nhật thông tin');
+
+    try {
+      const response = await fetch(`${API_URL}/users/${user?.phoneEmergency}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editedProfile),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error('message' in data ? data.message : 'Lỗi cập nhật thông tin');
+      }
+
+      setProfile(data.user);
+      setIsEditing(false);
+      Alert.alert('Thành công', 'Đã cập nhật thông tin');
+    } catch (error) {
+      console.error('Update profile error:', error);
+      Alert.alert('Lỗi', 'Không thể cập nhật thông tin người dùng');
+    }
   };
 
   const handleLogout = () => {
@@ -89,18 +147,30 @@ export default function ProfileScreen() {
             value={value}
             onChangeText={(text) => {
               const field = label.toLowerCase().replace(/ /g, '');
-              if (field.includes('emergency')) {
-                const emergencyField = field.replace('emergency', '').toLowerCase();
-                setEditedProfile({
-                  ...editedProfile,
-                  emergencyContact: {
-                    ...editedProfile.emergencyContact,
-                    [emergencyField]: text,
-                  },
-                });
-              } else {
-                setEditedProfile({ ...editedProfile, [field]: text });
-              }
+              let fieldName: keyof UserProfile;
+              
+              // Map labels to field names
+              // Map labels to field names
+              const fieldMap: Record<string, keyof UserProfile> = {
+                'họvàtên': 'fullName',
+                'tuổi': 'age',
+                'giớitính': 'sex',
+                'sốđiệnthoại': 'phone',
+                'địachỉ': 'address',
+                'bệnhnền': 'hidden_disease',
+                'họtên': 'fullNameEmergency',
+                'emailnhậntinbáo': 'emailEmergency',
+                'máyđo': 'deviceId', // Add device ID field
+                'sốđiệnthoạikhẩncấp': 'phoneEmergency'
+              };
+
+              fieldName = fieldMap[field];
+              if (!fieldName) return;
+
+              setEditedProfile(prev => ({
+                ...prev,
+                [fieldName]: fieldName === 'age' && text ? Number(text) : text
+              }));
             }}
             placeholder={`Nhập ${label.toLowerCase()}`}
             placeholderTextColor="#999"
@@ -156,16 +226,17 @@ export default function ProfileScreen() {
       <View style={styles.content}>
         <Text style={styles.sectionTitle}>Thông tin cá nhân</Text>
         {renderInfoCard('user', 'Họ và tên', editedProfile.fullName)}
-        {renderInfoCard('calendar', 'Tuổi', editedProfile.age)}
-        {renderInfoCard('venus-mars', 'Giới tính', editedProfile.gender)}
+        {renderInfoCard('calendar', 'Tuổi', editedProfile.age?.toString() || '')}
+        {renderInfoCard('venus-mars', 'Giới tính', editedProfile.sex)}
         {renderInfoCard('phone', 'Số điện thoại', editedProfile.phone)}
         {renderInfoCard('map-marker', 'Địa chỉ', editedProfile.address)}
-        {renderInfoCard('heartbeat', 'Bệnh nền', editedProfile.medicalConditions)}
+        {renderInfoCard('heartbeat', 'Bệnh nền', editedProfile.hidden_disease)}
+        {renderInfoCard('mobile-phone', 'Máy đo', editedProfile.deviceId)}
 
         <Text style={styles.sectionTitle}>Liên hệ khẩn cấp</Text>
-        {renderInfoCard('user-circle', 'Họ tên', editedProfile.emergencyContact.name)}
-        {renderInfoCard('phone', 'Số điện thoại', editedProfile.emergencyContact.phone)}
-        {renderInfoCard('users', 'Quan hệ', editedProfile.emergencyContact.relationship)}
+        {renderInfoCard('user-circle', 'Họ tên', editedProfile.fullNameEmergency)}
+        {renderInfoCard('phone', 'Số điện thoại khẩn cấp', editedProfile.phoneEmergency)}
+        {renderInfoCard('users', 'Email nhận tin báo', editedProfile.emailEmergency)}
       </View>
     </ScrollView>
   );

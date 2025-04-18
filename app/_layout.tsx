@@ -4,14 +4,25 @@ import { useRouter, useSegments } from 'expo-router';
 import React from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export const AuthContext = React.createContext<{
-  login: () => void;
-  logout: () => void;
+interface User {
+  phoneEmergency: string;
+  deviceId: string;
+  fullName: string;
+  // Add other user fields as needed
+}
+
+interface AuthContextType {
+  login: (user: User) => Promise<void>;
+  logout: () => Promise<void>;
   isLoggedIn: boolean;
-}>({
-  login: () => {},
-  logout: () => {},
+  user: User | null;
+}
+
+export const AuthContext = React.createContext<AuthContextType>({
+  login: async () => {},
+  logout: async () => {},
   isLoggedIn: false,
+  user: null,
 });
 
 function useProtectedRoute(isLoggedIn: boolean) {
@@ -31,26 +42,60 @@ function useProtectedRoute(isLoggedIn: boolean) {
 
 export default function RootLayout() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
 
   useProtectedRoute(isLoggedIn);
 
   useEffect(() => {
-    // Kiểm tra trạng thái đăng nhập khi khởi động app
-    AsyncStorage.getItem('isLoggedIn').then(value => {
-      setIsLoggedIn(value === 'true');
-    });
+    // Check login state and user data on app start
+    const loadAuthState = async () => {
+      try {
+        const [loginState, userData] = await Promise.all([
+          AsyncStorage.getItem('isLoggedIn'),
+          AsyncStorage.getItem('userData')
+        ]);
+        
+        if (loginState === 'true' && userData) {
+          setIsLoggedIn(true);
+          setUser(JSON.parse(userData));
+        }
+      } catch (error) {
+        console.error('Error loading auth state:', error);
+      }
+    };
+
+    loadAuthState();
   }, []);
 
-  const authContext = {
-    login: async () => {
-      await AsyncStorage.setItem('isLoggedIn', 'true');
-      setIsLoggedIn(true);
+  const authContext: AuthContextType = {
+    login: async (userData: User) => {
+      try {
+        await Promise.all([
+          AsyncStorage.setItem('isLoggedIn', 'true'),
+          AsyncStorage.setItem('userData', JSON.stringify(userData))
+        ]);
+        setUser(userData);
+        setIsLoggedIn(true);
+      } catch (error) {
+        console.error('Error saving auth state:', error);
+        throw new Error('Lỗi lưu thông tin đăng nhập');
+      }
     },
     logout: async () => {
-      await AsyncStorage.removeItem('isLoggedIn');
-      setIsLoggedIn(false);
+      try {
+        await Promise.all([
+          AsyncStorage.removeItem('isLoggedIn'),
+          AsyncStorage.removeItem('userData')
+        ]);
+        setUser(null);
+        setIsLoggedIn(false);
+      } catch (error) {
+        console.error('Error clearing auth state:', error);
+        throw new Error('Lỗi đăng xuất');
+      }
     },
     isLoggedIn,
+    user,
   };
 
   return (
