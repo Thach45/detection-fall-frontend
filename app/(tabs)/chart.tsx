@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { StyleSheet, View, Text, ScrollView, Dimensions, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, Dimensions, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { FontAwesome } from '@expo/vector-icons';
 import { AuthContext } from '../_layout';
@@ -19,26 +19,33 @@ export default function ChartScreen() {
   });
   const [weeklyCount, setWeeklyCount] = useState(0);
   const [monthlyCount, setMonthlyCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
   const { user } = useContext(AuthContext);
 
+  const fetchData = async () => {
+    if (!user?.deviceId) return;
+    
+    setIsLoading(true);
+    try {
+      const response = await fetch(`https://detection-fall-backend-production.up.railway.app/api/fall-detection?deviceId=${user.deviceId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      const data = await response.json();
+      setFallHistory(data.data || []);
+      
+      // Process data for statistics
+      processChartData(data.data || []);
+    } catch (error) {
+      console.error('Error fetching fall history:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch(`http://localhost:3000/api/fall-detection?deviceId=${user?.deviceId}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        });
-        const data = await response.json();
-        setFallHistory(data.data || []);
-        
-        // Process data for statistics
-        processChartData(data.data || []);
-      } catch (error) {
-        console.error('Error fetching fall history:', error);
-      }
-    };
     fetchData();
   }, [user?.deviceId]);
 
@@ -46,6 +53,22 @@ export default function ChartScreen() {
     // Update chart data when period changes
     processChartData(fallHistory);
   }, [selectedPeriod, fallHistory]);
+
+  const handleReset = () => {
+    setChartData({
+      labels: selectedPeriod === 'week' ? ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'] : ['Tuần 1', 'Tuần 2', 'Tuần 3', 'Tuần 4'],
+      datasets: [
+        {
+          data: selectedPeriod === 'week' ? [0, 0, 0, 0, 0, 0, 0] : [0, 0, 0, 0],
+          color: (opacity = 1) => `rgba(33, 150, 243, ${opacity})`,
+          strokeWidth: 2
+        }
+      ]
+    });
+    setWeeklyCount(0);
+    setMonthlyCount(0);
+    fetchData();
+  };
 
   const processChartData = (data: any[]) => {
     if (!data || data.length === 0) return;
@@ -154,6 +177,16 @@ export default function ChartScreen() {
             <Text style={styles.summaryLabel}>Tháng này</Text>
           </View>
         </View>
+        <TouchableOpacity style={styles.resetButton} onPress={handleReset} disabled={isLoading}>
+          {isLoading ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <>
+              <FontAwesome name="refresh" size={16} color="#fff" />
+              {/* <Text style={styles.resetButtonText}></Text> */}
+            </>
+          )}
+        </TouchableOpacity>
       </View>
 
       <View style={styles.chartSection}>
@@ -210,6 +243,9 @@ export default function ChartScreen() {
           )}
         </View>
       </View>
+      <View>
+        
+      </View>
 
       <View style={styles.historySection}>
         <Text style={styles.sectionTitle}>Lịch sử té ngã</Text>
@@ -258,6 +294,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
+    position: 'relative',
   },
   headerTitle: {
     fontSize: 24,
@@ -282,6 +319,23 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.22,
     shadowRadius: 2.22,
+  },
+  resetButton: {
+    position: 'absolute',
+    top: 60,
+    right: 15,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  resetButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginLeft: 5,
   },
   summaryNumber: {
     fontSize: 24,

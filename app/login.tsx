@@ -16,7 +16,7 @@ import { AuthContext } from './_layout';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = 'https://detection-fall-backend-production.up.railway.app/api';
 
 interface LoginResponse {
   message: string;

@@ -16,7 +16,7 @@ type IconName = 'user' | 'calendar' | 'venus-mars' | 'phone' | 'map-marker' |
                 'heartbeat' | 'user-circle' | 'users' | 'edit' | 'check' | 'sign-out' |
                 'tablet' | 'mobile-phone';
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = 'https://detection-fall-backend-production.up.railway.app/api';
 
 interface ApiError {
   message: string;
@@ -27,7 +27,6 @@ interface UserProfile {
   fullName: string;
   age: number | null;
   sex: string;
- 
   address: string;
   hidden_disease: string;
   fullNameEmergency: string;
@@ -46,7 +45,6 @@ export default function ProfileScreen() {
     fullName: user?.fullName || '',
     age: null,
     sex: '',
-
     address: '',
     hidden_disease: '',
     phoneEmergency: user?.phoneEmergency || '',
@@ -59,7 +57,6 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     if (user?.phoneEmergency) { 
-      
       fetchUserProfile();
     }
   }, [user]);
@@ -95,12 +92,19 @@ export default function ProfileScreen() {
     }
 
     try {
+      // Đảm bảo deviceId và phoneEmergency không thay đổi
+      const dataToUpdate = {
+        ...editedProfile,
+        deviceId: profile.deviceId, // Sử dụng giá trị ban đầu
+        phoneEmergency: profile.phoneEmergency // Sử dụng giá trị ban đầu
+      };
+
       const response = await fetch(`${API_URL}/users/${user?.phoneEmergency}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(editedProfile),
+        body: JSON.stringify(dataToUpdate),
       });
 
       const data = await response.json();
@@ -136,12 +140,12 @@ export default function ProfileScreen() {
     );
   };
 
-  const renderInfoCard = (icon: IconName, label: string, value: string) => (
+  const renderInfoCard = (icon: IconName, label: string, value: string, isEditable: boolean = true) => (
     <View style={styles.infoCard}>
       <FontAwesome name={icon} size={20} color="#2196F3" style={styles.cardIcon} />
       <View style={styles.cardContent}>
         <Text style={styles.cardLabel}>{label}</Text>
-        {isEditing ? (
+        {isEditing && isEditable ? (
           <TextInput
             style={styles.input}
             value={value}
@@ -150,18 +154,15 @@ export default function ProfileScreen() {
               let fieldName: keyof UserProfile;
               
               // Map labels to field names
-              // Map labels to field names
               const fieldMap: Record<string, keyof UserProfile> = {
                 'họvàtên': 'fullName',
                 'tuổi': 'age',
                 'giớitính': 'sex',
-               
                 'địachỉ': 'address',
                 'bệnhnền': 'hidden_disease',
                 'họtên': 'fullNameEmergency',
-                'emailnhậntinbáo': 'emailEmergency',
-                'máyđo': 'deviceId', // Add device ID field
-                'sốđiệnthoạikhẩncấp': 'phoneEmergency'
+                'emailnhậntinbáo': 'emailEmergency'
+                // Đã loại bỏ deviceId và phoneEmergency khỏi danh sách có thể chỉnh sửa
               };
 
               fieldName = fieldMap[field];
@@ -176,7 +177,12 @@ export default function ProfileScreen() {
             placeholderTextColor="#999"
           />
         ) : (
-          <Text style={styles.cardValue}>{value}</Text>
+          <Text style={[styles.cardValue, !isEditable && isEditing && styles.disabledValue]}>
+            {value}
+            {!isEditable && isEditing && (
+              <Text style={styles.lockedText}> (không thể thay đổi)</Text>
+            )}
+          </Text>
         )}
       </View>
     </View>
@@ -228,14 +234,13 @@ export default function ProfileScreen() {
         {renderInfoCard('user', 'Họ và tên', editedProfile.fullName)}
         {renderInfoCard('calendar', 'Tuổi', editedProfile.age?.toString() || '')}
         {renderInfoCard('venus-mars', 'Giới tính', editedProfile.sex)}
-     
         {renderInfoCard('map-marker', 'Địa chỉ', editedProfile.address)}
         {renderInfoCard('heartbeat', 'Bệnh nền', editedProfile.hidden_disease)}
-        {renderInfoCard('mobile-phone', 'Máy đo', editedProfile.deviceId)}
+        {renderInfoCard('mobile-phone', 'Máy đo', editedProfile.deviceId, false)} {/* Không cho phép chỉnh sửa */}
 
         <Text style={styles.sectionTitle}>Liên hệ khẩn cấp</Text>
         {renderInfoCard('user-circle', 'Họ tên', editedProfile.fullNameEmergency)}
-        {renderInfoCard('phone', 'Số điện thoại khẩn cấp', editedProfile.phoneEmergency)}
+        {renderInfoCard('phone', 'Số điện thoại khẩn cấp', editedProfile.phoneEmergency, false)} {/* Không cho phép chỉnh sửa */}
         {renderInfoCard('users', 'Email nhận tin báo', editedProfile.emailEmergency)}
       </View>
     </ScrollView>
@@ -345,6 +350,14 @@ const styles = StyleSheet.create({
   cardValue: {
     fontSize: 16,
     color: '#333',
+  },
+  disabledValue: {
+    color: '#777',
+  },
+  lockedText: {
+    fontSize: 12,
+    fontStyle: 'italic',
+    color: '#999',
   },
   input: {
     fontSize: 16,

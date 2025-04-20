@@ -15,7 +15,7 @@ import {
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = 'https://detection-fall-backend-production.up.railway.app/api';
 
 interface RegisterResponse {
   message: string;
