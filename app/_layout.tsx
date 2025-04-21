@@ -3,13 +3,18 @@ import { Stack } from 'expo-router';
 import { useRouter, useSegments } from 'expo-router';
 import React from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { PaperProvider } from 'react-native-paper';
+import { useColorScheme } from 'react-native';
+import { lightTheme, darkTheme } from '../constants/theme';
 
 interface User {
+  _id: string;
   phoneEmergency: string;
   deviceId: string;
   fullName?: string;
-
-  // Add other user fields as needed
+  email?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface AuthContextType {
@@ -44,6 +49,7 @@ function useProtectedRoute(isLoggedIn: boolean) {
 export default function RootLayout() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const colorScheme = useColorScheme();
 
   useProtectedRoute(isLoggedIn);
 
@@ -100,21 +106,23 @@ export default function RootLayout() {
   };
 
   return (
-    <AuthContext.Provider value={authContext}>
-      <Stack>
-        <Stack.Screen
-          name="login"
-          options={{
-            headerShown: false,
-          }}
-        />
-        <Stack.Screen
-          name="(tabs)"
-          options={{
-            headerShown: false,
-          }}
-        />
-      </Stack>
-    </AuthContext.Provider>
+    <PaperProvider theme={colorScheme === 'dark' ? darkTheme : lightTheme}>
+      <AuthContext.Provider value={authContext}>
+        <Stack>
+          <Stack.Screen
+            name="login"
+            options={{
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen
+            name="(tabs)"
+            options={{
+              headerShown: false,
+            }}
+          />
+        </Stack>
+      </AuthContext.Provider>
+    </PaperProvider>
   );
 }

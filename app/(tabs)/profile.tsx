@@ -177,12 +177,14 @@ export default function ProfileScreen() {
             placeholderTextColor="#999"
           />
         ) : (
-          <Text style={[styles.cardValue, !isEditable && isEditing && styles.disabledValue]}>
-            {value}
+          <View>
+            <Text style={[styles.cardValue, !isEditable && isEditing && styles.disabledValue]}>
+              {value}
+            </Text>
             {!isEditable && isEditing && (
               <Text style={styles.lockedText}> (không thể thay đổi)</Text>
             )}
-          </Text>
+          </View>
         )}
       </View>
     </View>
@@ -236,11 +238,11 @@ export default function ProfileScreen() {
         {renderInfoCard('venus-mars', 'Giới tính', editedProfile.sex)}
         {renderInfoCard('map-marker', 'Địa chỉ', editedProfile.address)}
         {renderInfoCard('heartbeat', 'Bệnh nền', editedProfile.hidden_disease)}
-        {renderInfoCard('mobile-phone', 'Máy đo', editedProfile.deviceId, false)} {/* Không cho phép chỉnh sửa */}
+        {renderInfoCard('mobile-phone', 'Máy đo', editedProfile.deviceId, false)}
 
         <Text style={styles.sectionTitle}>Liên hệ khẩn cấp</Text>
         {renderInfoCard('user-circle', 'Họ tên', editedProfile.fullNameEmergency)}
-        {renderInfoCard('phone', 'Số điện thoại khẩn cấp', editedProfile.phoneEmergency, false)} {/* Không cho phép chỉnh sửa */}
+        {renderInfoCard('phone', 'Số điện thoại khẩn cấp', editedProfile.phoneEmergency, false)}
         {renderInfoCard('users', 'Email nhận tin báo', editedProfile.emailEmergency)}
       </View>
     </ScrollView>

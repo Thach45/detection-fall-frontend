@@ -1,0 +1,14 @@
+### Test creating a medication reminder
+POST {{baseUrl}}/api/test-medication-reminder
+Content-Type: application/json
+
+{
+    "deviceId": "ESP8266_001",
+    "medicineName": "Test Medicine"
+}
+
+### Check device connection status
+GET {{baseUrl}}/api/device-status/ESP8266_001
+
+### Variables
+@baseUrl = https://your-server-url/api

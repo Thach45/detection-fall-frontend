@@ -25,6 +25,22 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="smart-config"
+        options={{
+          title: 'Cấu hình',
+          tabBarIcon: ({ color }) => <FontAwesome size={28} name="wifi" color={color} />,
+          headerShown: false
+        }}
+      />
+      <Tabs.Screen
+        name="medicine"
+        options={{
+          title: 'Thuốc',
+          tabBarIcon: ({ color }) => <FontAwesome size={28} name="medkit" color={color} />,
+          headerShown: false
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: 'Cá nhân',
