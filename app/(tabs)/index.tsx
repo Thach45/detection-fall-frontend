@@ -5,7 +5,7 @@ import { AuthContext } from '../_layout';
 import io from 'socket.io-client';
 
 const SOCKET_URL = "https://detection-fall-backend-production.up.railway.app/"; // Địa chỉ WebSocket server
-
+// const SOCKET_URL = "http://localhost:3000/"; // Địa chỉ WebSocket server
 // HTML template cho OpenStreetMap với Leaflet
 const getMapHTML = (latitude: number, longitude: number) => `
 <!DOCTYPE html>

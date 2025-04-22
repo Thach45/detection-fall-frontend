@@ -11,7 +11,10 @@ interface MedicationReminder {
   schedule: { hours: number; minutes: number }[];
   isActive: boolean;
 }
+
 const URL ="https://detection-fall-backend-production.up.railway.app"
+// const URL = 'http://localhost:3000';
+
 export default function MedicineScreen() {
   const [visible, setVisible] = useState(false);
   const [medicineName, setMedicineName] = useState('');
@@ -72,31 +75,47 @@ export default function MedicineScreen() {
       return;
     }
 
+    const requestData = {
+      userId: user._id,
+      deviceId: user.deviceId,
+      medicineName,
+      schedule: schedules,
+    };
+
     try {
+      console.log('Sending reminder request:', requestData);
+
       const response = await fetch(`${URL}/api/medication-reminders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
-        body: JSON.stringify({
-          userId: user._id,
-          deviceId: user.deviceId,
-          medicineName,
-          schedule: schedules,
-        }),
+        body: JSON.stringify(requestData),
       });
 
-      const data = await response.json();
+      const responseText = await response.text();
+      console.log('Raw response:', responseText);
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('JSON Parse Error:', parseError);
+        Alert.alert('Lỗi', `Không thể xử lý phản hồi từ máy chủ: ${responseText.substring(0, 100)}`);
+        return;
+      }
+
       if (data.success) {
         Alert.alert('Thành công', 'Đã tạo nhắc nhở uống thuốc');
         hideDialog();
-        loadReminders();
+        await loadReminders();
       } else {
-        Alert.alert('Lỗi', data.message);
+        Alert.alert('Lỗi', data.message || 'Không thể lưu nhắc nhở');
       }
     } catch (error) {
       console.error('Error saving reminder:', error);
-      Alert.alert('Lỗi', 'Không thể lưu nhắc nhở');
+      Alert.alert('Lỗi', error instanceof Error ? error.message : 'Không thể lưu nhắc nhở');
     }
   };
 
