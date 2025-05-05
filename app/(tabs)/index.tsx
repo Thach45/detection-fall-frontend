@@ -1,11 +1,15 @@
 import { useContext, useEffect, useState } from 'react';
-import { StyleSheet, Alert, Text, View, Platform, Modal, TouchableOpacity, Dimensions } from 'react-native';
+import { StyleSheet, Alert, Text, View, Platform, Modal, TouchableOpacity, Dimensions, Image } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { AuthContext } from '../_layout';
 import io from 'socket.io-client';
+import { FontAwesome } from '@expo/vector-icons';
+import { ActivityIndicator } from 'react-native-paper';
 
-const SOCKET_URL = "https://detection-fall-backend-production.up.railway.app/"; // Địa chỉ WebSocket server
+// const SOCKET_URL = "https://detection-fall-backend-production.up.railway.app/"; // Địa chỉ WebSocket server
 // const SOCKET_URL = "http://localhost:3000/"; // Địa chỉ WebSocket server
+const SOCKET_URL = "https://detection-fall-backend.onrender.com"; // Địa chỉ WebSocket server
+
 // HTML template cho OpenStreetMap với Leaflet
 const getMapHTML = (latitude: number, longitude: number) => `
 <!DOCTYPE html>
@@ -46,7 +50,6 @@ export default function TabOneScreen() {
     longitude: number;
     timestamp: string;
   } | null>(null);
-
   useEffect(() => {
     console.log('Connecting to:', SOCKET_URL);
     
@@ -147,6 +150,8 @@ export default function TabOneScreen() {
         )}
       </View>
 
+      
+
       <View style={styles.infoContainer}>
         <Text style={styles.description}>
           Ứng dụng đang theo dõi tín hiệu từ thiết bị IoT.
@@ -161,7 +166,16 @@ export default function TabOneScreen() {
           </TouchableOpacity>
         )}
       </View>
-
+      <View style={styles.logoContainer}>
+        <Image
+          source={require('../../assets/images/icon.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
+        <Text style={styles.introduction}>Hãy quan tâm gia đình hơn nhé!</Text>
+              
+      </View> 
+      
       <Modal
         visible={showMap}
         animationType="slide"
@@ -226,7 +240,7 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 10,
     backgroundColor: '#e3f2fd',
-    marginTop: 20,
+    marginTop: 10,
     width: '100%',
     shadowColor: '#000',
     shadowOffset: {
@@ -249,6 +263,12 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     marginTop: 15,
     alignItems: 'center'
+  },
+  logoContainer: {
+    position: 'absolute',
+    bottom: 20,      // Cách đáy 20px (có thể chỉnh lại theo ý)
+    left: 20,        // Cách trái 20px
+    display: 'flex',
   },
   mapButtonText: {
     color: '#fff',
@@ -283,5 +303,25 @@ const styles = StyleSheet.create({
     color: '#000',
     fontSize: 16,
     fontWeight: '500'
+  },
+  logo: {
+    width: 150,
+    height: 150,
+    left: 0,
+    marginTop: 20,
+  },
+  introduction: {
+    fontSize: 15,
+    position: 'absolute',
+    bottom: 0,
+    width: 200,
+    height: 60,
+    left: 155,
+    top: 50,
+    color: '#000',
+    backgroundColor: '#e3f2fd',
+    borderRadius: 10,
+    padding: 10,
+    
   }
 });

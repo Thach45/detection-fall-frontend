@@ -16,11 +16,13 @@ import { AuthContext } from './_layout';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'https://detection-fall-backend-production.up.railway.app/api';
+// const API_URL = 'https://detection-fall-backend-production.up.railway.app/api';
+const API_URL = 'https://detection-fall-backend.onrender.com/api'; // Địa chỉ API server
 
 interface LoginResponse {
   message: string;
   user: {
+    _id: string;
     phoneEmergency: string;
     deviceId: string;
     fullName: string;

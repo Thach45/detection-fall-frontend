@@ -12,7 +12,8 @@ interface MedicationReminder {
   isActive: boolean;
 }
 
-const URL ="https://detection-fall-backend-production.up.railway.app"
+// const URL ="https://detection-fall-backend-production.up.railway.app"
+const URL = 'https://detection-fall-backend.onrender.com'; // Địa chỉ API server
 // const URL = 'http://localhost:3000';
 
 export default function MedicineScreen() {

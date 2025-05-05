@@ -3,7 +3,7 @@ import { StyleSheet, View, Text, ScrollView, Dimensions, TouchableOpacity, Activ
 import { LineChart } from 'react-native-chart-kit';
 import { FontAwesome } from '@expo/vector-icons';
 import { AuthContext } from '../_layout';
-
+const URL = 'https://detection-fall-backend.onrender.com'; // Địa chỉ API server
 export default function ChartScreen() {
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month'>('week');
   const [fallHistory, setFallHistory] = useState<any[]>([]);
@@ -27,7 +27,7 @@ export default function ChartScreen() {
     
     setIsLoading(true);
     try {
-      const response = await fetch(`https://detection-fall-backend-production.up.railway.app/api/fall-detection?deviceId=${user.deviceId}`, {
+      const response = await fetch(`${URL}/api/fall-detection?deviceId=${user.deviceId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

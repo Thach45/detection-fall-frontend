@@ -16,7 +16,8 @@ type IconName = 'user' | 'calendar' | 'venus-mars' | 'phone' | 'map-marker' |
                 'heartbeat' | 'user-circle' | 'users' | 'edit' | 'check' | 'sign-out' |
                 'tablet' | 'mobile-phone';
 
-const API_URL = 'https://detection-fall-backend-production.up.railway.app/api';
+// const API_URL = 'https://detection-fall-backend-production.up.railway.app/api';
+const API_URL = 'https://detection-fall-backend.onrender.com/api'; // Địa chỉ API server
 
 interface ApiError {
   message: string;

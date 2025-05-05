@@ -15,7 +15,8 @@ import {
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
-const API_URL = 'https://detection-fall-backend-production.up.railway.app/api';
+// const API_URL = 'https://detection-fall-backend-production.up.railway.app/api';
+const API_URL = 'https://detection-fall-backend.onrender.com/api'; // Địa chỉ API server
 
 interface RegisterResponse {
   message: string;
